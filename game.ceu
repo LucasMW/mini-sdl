@@ -9,7 +9,7 @@ input _SDL_MouseButtonEvent&& SDL_MOUSEBUTTONDOWN;
 
 var _SDL_Window&? window;
     finalize
-        window = &_SDL_CreateWindow("Jogo",
+        window = &_SDL_CreateWindow("Game",
                     _SDL_WINDOWPOS_UNDEFINED,
                     _SDL_WINDOWPOS_UNDEFINED,
                     640, 480, _SDL_WINDOW_SHOWN);
@@ -47,6 +47,30 @@ do
     end
 end
 
+class Enemy with
+    var _SDL_Renderer& ren;
+    var _SDL_Rect   r;
+    var int         vx;
+    var int         x=0;
+    var int         y=1;
+    do
+    par do
+        every dt in SDL_DT do
+           x = x + this.vx*dt;
+            if x > 640000 then
+                x = 0;
+            end
+        end
+    with
+        every SDL_REDRAW do
+           _SDL_SetRenderDrawColor(&&this.ren,
+                                    0xCC,0xBB,0xAA,0x00);
+            this.r.x = x / 1000;
+            _SDL_RenderFillRect(&&this.ren, &&this.r);
+        end
+    end
+end
+
 class Player with
     var _SDL_Renderer& ren;
 do
@@ -66,18 +90,26 @@ do
         par do
             loop do
                 var _SDL_KeyboardEvent&& key;
-                key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_LEFT;
-                vx = -100;
-                key = await SDL_KEYUP   until key:keysym.sym==_SDLK_LEFT;
-                vx = 0;
+                 key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
+                _printf("fire\n");
             end
         with
-            loop do
-                var _SDL_KeyboardEvent&& key;
-                key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_RIGHT;
-                vx = 100;
-                key = await SDL_KEYUP   until key:keysym.sym==_SDLK_RIGHT;
-                vx = 0;
+            par do
+                loop do
+                    var _SDL_KeyboardEvent&& key;
+                    key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_LEFT;
+                    vx = -100;
+                    key = await SDL_KEYUP   until key:keysym.sym==_SDLK_LEFT;
+                    vx = 0;
+                end
+            with
+                loop do
+                    var _SDL_KeyboardEvent&& key;
+                    key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_RIGHT;
+                    vx = 100;
+                    key = await SDL_KEYUP   until key:keysym.sym==_SDLK_RIGHT;
+                    vx = 0;
+                end
             end
         end
     with
@@ -113,6 +145,15 @@ with
 
     var Player p with
         this.ren = &renderer!;
+    end;
+
+    var Enemy[30] _ with
+        var int w = 50 + _rand()%200;
+        var int h = 20 + _rand()%50;
+        var int y = h + _rand()%200;
+        this.ren = &renderer!;
+        this.r   = _SDL_Rect(0,y,w,h);
+        this.vx  = 10 + _rand()%50;
     end;
 
     await FOREVER;
