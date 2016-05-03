@@ -74,7 +74,7 @@ end
 class Beam with
     var _SDL_Renderer& ren;
 do
-    var int vy = 10;
+    var int vy = -10;
     var int y = 0;
     var _SDL_Rect r = _SDL_Rect(0,0, 5,50);
     par do
@@ -130,6 +130,11 @@ do
                 var _SDL_KeyboardEvent&& key;
                  key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
                 _printf("fire\n");
+                spawn Beam with
+                    this.vy = 10;
+                    this.y = 0;
+                    this.ren = &ren;
+                end;
             end
     
     with
