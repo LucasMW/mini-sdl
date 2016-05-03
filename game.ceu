@@ -73,19 +73,23 @@ end
 
 class Beam with
     var _SDL_Renderer& ren;
-do
     var int vy = -10;
     var int y = 0;
-    var _SDL_Rect r = _SDL_Rect(0,0, 5,50);
+    var int x = 0;
+do
+    
+    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
     par do
         every dt in SDL_DT do
            y = y + this.vy*dt;
         end
     with
         every SDL_REDRAW do
+            _printf("redraw %d %d\n",x,y);
            _SDL_SetRenderDrawColor(&&this.ren,
                                     0xCC,0xBB,0xAA,0x00);
             this.r.y = y / 1000;
+            this.r.x = x / 1000;
             _SDL_RenderFillRect(&&this.ren, &&this.r);
         end
     end
@@ -129,10 +133,11 @@ do
                 loop do
                 var _SDL_KeyboardEvent&& key;
                  key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
-                _printf("fire\n");
+                _printf("fire %d %d\n",x,y);
                 spawn Beam with
-                    this.vy = 10;
-                    this.y = 0;
+                    this.vy = -500;
+                    this.y = y -50000;
+                    this.x = x + 7500;
                     this.ren = &ren;
                 end;
             end
