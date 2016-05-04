@@ -87,7 +87,7 @@ do
         every SDL_REDRAW do
             _printf("redraw %d %d\n",x,y);
            _SDL_SetRenderDrawColor(&&this.ren,
-                                    0xCC,0xBB,0xAA,0x00);
+                                    0x00,0xBB,0x00,0x00);
             this.r.y = y / 1000;
             this.r.x = x / 1000;
             _SDL_RenderFillRect(&&this.ren, &&this.r);
@@ -173,10 +173,6 @@ with
         this.vx  = 10 + _rand()%50;
     end;
 
-    var Player p with
-        this.ren = &renderer!;
-    end;
-
     var Enemy[30] _ with
         var int w = 50 + _rand()%200;
         var int h = 20 + _rand()%50;
@@ -185,6 +181,12 @@ with
         this.r   = _SDL_Rect(0,y,w,h);
         this.vx  = 10 + _rand()%50;
     end;
+    
+    var Player p with
+        this.ren = &renderer!;
+    end;
+
+    
 
     await FOREVER;
 with
