@@ -51,21 +51,31 @@ class Enemy with
     var _SDL_Renderer& ren;
     var _SDL_Rect   r;
     var int         vx;
-    var int         x=0;
-    var int         y=1;
+    var int         vy;
+    var int         x;
+    var int         y;
 do
+    this.r = _SDL_Rect(x,y, this.r.w,this.r.h);
     par do
         every dt in SDL_DT do
            x = x + this.vx*dt;
+           y = y + this.vy*dt;
             if x > 640000 then
                 x = 0;
             end
+            if y > 500000 then
+                x = 0;
+                _printf("Game Over\n");
+                _exit(0);
+            end
+
         end
     with
         every SDL_REDRAW do
            _SDL_SetRenderDrawColor(&&this.ren,
                                     0xCC,0xBB,0xAA,0x00);
             this.r.x = x / 1000;
+            this.r.y = y / 1000;
             _SDL_RenderFillRect(&&this.ren, &&this.r);
         end
     end
@@ -78,7 +88,7 @@ class Beam with
     var int x = 0;
 do
     
-    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
+    var _SDL_Rect r = _SDL_Rect(100,y, 5,50);
     par do
         every dt in SDL_DT do
            y = y + this.vy*dt;
@@ -103,7 +113,7 @@ do
     var int vx = 0;
     var int vy = 0;
 
-    var _SDL_Rect r = _SDL_Rect(0,0, 20,50);
+    var _SDL_Rect r = _SDL_Rect(x,y, 20,50);
 
     par do
         every dt in SDL_DT do
@@ -174,12 +184,17 @@ with
     end;
 
     var Enemy[30] _ with
-        var int w = 50 + _rand()%200;
-        var int h = 20 + _rand()%50;
-        var int y = h + _rand()%200;
+        var int w = 50; 
+        var int h = 50; 
+        var int y = h + _rand()%300;
+        var int x = w + _rand()%300;
+
+        this.x = x;
+        this.y = y;
         this.ren = &renderer!;
-        this.r   = _SDL_Rect(0,y,w,h);
-        this.vx  = 10 + _rand()%50;
+        this.r   = _SDL_Rect(100000,y,w,h);
+        this.vx  = 10 + _rand()%50; 
+        this.vy = 10 + _rand()%50;
     end;
     
     var Player p with
