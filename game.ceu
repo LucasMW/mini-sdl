@@ -86,12 +86,19 @@ class Beam with
     var int vy = -10;
     var int y = 0;
     var int x = 0;
+    event void beam_collide;
 do
     
-    var _SDL_Rect r = _SDL_Rect(100,y, 5,50);
+    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
     par do
-        every dt in SDL_DT do
-           y = y + this.vy*dt;
+        loop do
+            var int dt = await SDL_DT;
+            y = y + this.vy*dt;
+            if y < 0 then
+                _printf("Should Escape\n");
+                escape true;
+            end
+
         end
     with
         every SDL_REDRAW do
@@ -102,7 +109,12 @@ do
             this.r.x = x / 1000;
             _SDL_RenderFillRect(&&this.ren, &&this.r);
         end
+    with
+        await this.beam_collide;
+        _printf("Collision BEAM\n");
+        escape true;
     end
+
 end
 
 class Player with
@@ -192,7 +204,7 @@ with
         this.x = x;
         this.y = y;
         this.ren = &renderer!;
-        this.r   = _SDL_Rect(100000,y,w,h);
+        this.r   = _SDL_Rect(x,y,w,h);
         this.vx  = 10 + _rand()%50; 
         this.vy = 10 + _rand()%50;
     end;
