@@ -54,17 +54,19 @@ class Enemy with
     var int         vy;
     var int         x;
     var int         y;
+    event void go_collide;
+
 do
     this.r = _SDL_Rect(x,y, this.r.w,this.r.h);
     par do
         every dt in SDL_DT do
-           x = x + this.vx*dt;
-           y = y + this.vy*dt;
-            if x > 640000 then
-                x = 0;
+           this.x = x + this.vx*dt;
+           this.y = y + this.vy*dt;
+            if this.x > 640000 then
+                this.x = 0;
             end
-            if y > 500000 then
-                x = 0;
+            if this.y > 500000 then
+                this.x = 0;
                 _printf("Game Over\n");
                 _exit(0);
             end
@@ -78,6 +80,11 @@ do
             this.r.y = y / 1000;
             _SDL_RenderFillRect(&&this.ren, &&this.r);
         end
+    with
+        await this.go_collide;
+        _printf("EnemyCollide\n");
+         
+        escape true;
     end
 end
 
@@ -113,6 +120,8 @@ do
         await this.beam_collide;
         _printf("Collision BEAM\n");
         escape true;
+    with
+        
     end
 
 end
@@ -177,6 +186,8 @@ end
 
 _srand(_time(null));
 
+pool Enemy[30] enemiesx;
+
 par/or do
     await SDL_QUIT;
 with
@@ -195,7 +206,7 @@ with
         this.vx  = 10 + _rand()%50;
     end;
 
-    var Enemy[30] _ with
+    var Enemy[30] enemies with
         var int w = 50; 
         var int h = 50; 
         var int y = h + _rand()%300;
@@ -208,14 +219,26 @@ with
         this.vx  = 10 + _rand()%50; 
         this.vy = 10 + _rand()%50;
     end;
+   
     
     var Player p with
         this.ren = &renderer!;
     end;
 
-    
 
-    await FOREVER;
+        every SDL_DT do
+            loop i in 30 do
+                loop j in 30 do
+                    if i!=j and _SDL_HasIntersection(&&enemies[i].r,&&enemies[i].r) then
+                        emit enemies[i].go_collide;
+                    end
+                end
+            end
+        end
+            
+
+        
+
 with
     every SDL_REDRAW do
         _SDL_RenderPresent(&&renderer!);
@@ -224,4 +247,4 @@ end
 
 escape 0;
 
-// e63b95a6905d278fb2ea187f8cad63ede552b4d6
+
