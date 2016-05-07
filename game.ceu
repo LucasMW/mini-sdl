@@ -233,6 +233,7 @@ with
     end;
 
     var int i=0;
+    var Enemy[30]&& enemiesx;
     var Enemy[30] enemies with
         var int w = 50; 
         var int h = 50; 
@@ -249,6 +250,12 @@ with
         this.t = i;
     end;
    
+   enemiesx= &&enemies;
+
+   loop z in 30 do
+       var Enemy&& enemy = &&enemies[z];
+       _printf("%d\t",(*enemy).x);
+    end
     
     var Player p with
         this.ren = &renderer!;
