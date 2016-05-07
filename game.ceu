@@ -7,6 +7,7 @@ input _SDL_KeyboardEvent&& SDL_KEYDOWN;
 input _SDL_KeyboardEvent&& SDL_KEYUP;
 input _SDL_MouseButtonEvent&& SDL_MOUSEBUTTONDOWN;
 
+
 var _SDL_Window&? window;
     finalize
         window = &_SDL_CreateWindow("Game",
@@ -23,6 +24,8 @@ var _SDL_Renderer&? renderer;
     with
         _SDL_DestroyRenderer(&&renderer!);
     end
+
+
 
 class Cloud with
     var _SDL_Renderer& ren;
@@ -46,6 +49,46 @@ do
         end
     end
 end
+class Beam with
+    var _SDL_Renderer& ren;
+    var int vy = -10;
+    var int y = 0;
+    var int x = 0;
+    event void beam_collide;
+    var u8 red=0x00;
+    var u8 green=0x00;
+    var u8 blue=0x00;
+do
+    
+    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
+    par do
+        loop do
+            var int dt = await SDL_DT;
+            y = y + this.vy*dt;
+            if y < 0 then
+                _printf("Should Escape\n");
+                escape true;
+            end
+
+        end
+    with
+        every SDL_REDRAW do
+            //_printf("redraw %d %d\n",x,y);
+           _SDL_SetRenderDrawColor(&&this.ren,
+                                    this.red,this.green,this.blue,0x00);
+            this.r.y = y / 1000;
+            this.r.x = x / 1000;
+            _SDL_RenderFillRect(&&this.ren, &&this.r);
+        end
+    with
+        await this.beam_collide;
+        _printf("Collision BEAM\n");
+        escape true;
+    with
+        
+    end
+
+end
 
 class Enemy with
     var _SDL_Renderer& ren;
@@ -54,6 +97,7 @@ class Enemy with
     var int         vy;
     var int         x;
     var int         y;
+    var int         t;
     event void go_collide;
 
 do
@@ -84,47 +128,22 @@ do
         await this.go_collide;
         _printf("EnemyCollide\n");
          
-        escape true;
-    end
-end
-
-class Beam with
-    var _SDL_Renderer& ren;
-    var int vy = -10;
-    var int y = 0;
-    var int x = 0;
-    event void beam_collide;
-do
-    
-    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
-    par do
-        loop do
-            var int dt = await SDL_DT;
-            y = y + this.vy*dt;
-            if y < 0 then
-                _printf("Should Escape\n");
-                escape true;
-            end
-
-        end
-    with
-        every SDL_REDRAW do
-            _printf("redraw %d %d\n",x,y);
-           _SDL_SetRenderDrawColor(&&this.ren,
-                                    0x00,0xBB,0x00,0x00);
-            this.r.y = y / 1000;
-            this.r.x = x / 1000;
-            _SDL_RenderFillRect(&&this.ren, &&this.r);
-        end
-    with
-        await this.beam_collide;
-        _printf("Collision BEAM\n");
-        escape true;
+        spawn Beam  with
+                    this.vy = 500;
+                    this.y = y ;
+                    this.x = x ;
+                    this.ren = &ren;
+                    this.red = 0xCC;
+                end;
+        
+        //escape true;
     with
         
     end
-
 end
+
+
+
 
 class Player with
     var _SDL_Renderer& ren;
@@ -165,11 +184,12 @@ do
                 var _SDL_KeyboardEvent&& key;
                  key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
                 _printf("fire %d %d\n",x,y);
-                spawn Beam with
+                spawn Beam  with
                     this.vy = -500;
                     this.y = y -50000;
                     this.x = x + 7500;
                     this.ren = &ren;
+                    this.green= 0xBB;
                 end;
             end
     
@@ -186,7 +206,7 @@ end
 
 _srand(_time(null));
 
-pool Enemy[30] enemiesx;
+
 
 par/or do
     await SDL_QUIT;
@@ -209,8 +229,8 @@ with
     var Enemy[30] enemies with
         var int w = 50; 
         var int h = 50; 
-        var int y = h + _rand()%300;
-        var int x = w + _rand()%300;
+        var int y = 100+ _rand()%3000;
+        var int x = 10 + _rand()%300000;
 
         this.x = x;
         this.y = y;
@@ -218,11 +238,14 @@ with
         this.r   = _SDL_Rect(x,y,w,h);
         this.vx  = 10 + _rand()%50; 
         this.vy = 10 + _rand()%50;
+        this.t = 1 + _rand()%5;
     end;
    
     
     var Player p with
         this.ren = &renderer!;
+        
+        
     end;
 
 
@@ -234,8 +257,9 @@ with
                     end
                 end
             end
+
         end
-            
+          
 
         
 
