@@ -6,7 +6,8 @@ input int  SDL_DT;
 input _SDL_KeyboardEvent&& SDL_KEYDOWN;
 input _SDL_KeyboardEvent&& SDL_KEYUP;
 input _SDL_MouseButtonEvent&& SDL_MOUSEBUTTONDOWN;
-
+event (_SDL_Rect,int) collideTime;
+event int teste1;
 
 
 var _SDL_Window&? window;
@@ -59,9 +60,10 @@ class Beam with
     var u8 red=0x00;
     var u8 green=0x00;
     var u8 blue=0x00;
+    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
 do
     
-    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
+    
     par do
         loop do
             var int dt = await SDL_DT;
@@ -86,6 +88,7 @@ do
         _printf("Collision BEAM\n");
         escape true;
     with
+        //await teste1;
         
     end
 
@@ -153,6 +156,7 @@ end
 
 class Player with
     var _SDL_Renderer& ren;
+    pool Beam[]& beams;
 do
     var int x = (640/2 - 20/2) * 1000;
     var int y = (480-50) * 1000;
@@ -190,7 +194,7 @@ do
                 var _SDL_KeyboardEvent&& key;
                  key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
                 _printf("fire %d %d\n",x,y);
-                spawn Beam  with
+                spawn Beam in this.beams with
                     this.vy = -500;
                     this.y = y -50000;
                     this.x = x + 7500;
@@ -234,6 +238,7 @@ with
 
     var int i=0;
     var Enemy[30]&& enemiesx;
+    var Enemy&&[30] enemiesy;
     var Enemy[30] enemies with
         var int w = 50; 
         var int h = 50; 
@@ -252,33 +257,37 @@ with
    
    enemiesx= &&enemies;
 
-   loop z in 30 do
-       var Enemy&& enemy = &&enemies[z];
-       _printf("%d\t",(*enemy).x);
-    end
-    
+    pool Beam[] beams;
     var Player p with
         this.ren = &renderer!;
-        
-        
+        this.beams = &beams;
     end;
 
 
+    par/or do
         every SDL_DT do
             loop i in 30 do
-                loop j in 30 do
-                    if i!=j and _SDL_HasIntersection(&&enemies[i].r,&&enemies[i].r) then
-                        emit enemies[i].go_collide;
-                        emit enemies[j].go_collide;
+                loop b in beams do
+                    if _SDL_HasIntersection(&&b:r,&&enemies[i].r) then
+                        //emit enemies[i].go_collide;
+                        //emit enemies[j].go_collide;
+                        _printf("hit\n");
                         //_printf(" %d %d treta\n",i,j);
                     end
                 end
             end
-
         end
-          
-
-        
+    with
+        every 500 s do
+            loop z in 30 do
+                var Enemy&& enemy = &&enemies[z];
+                var Enemy&& enemy2 = &&(enemies[z]);
+               //@unsafe var Enemy&& enemy3 = &&(*enemiesx)[z];
+                _printf("%d\t",(*enemy).x);
+                //_printf("%d\t",(*enemies)[z].x);
+            end
+        end
+    end
 
 with
     every SDL_REDRAW do
