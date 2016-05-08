@@ -87,9 +87,6 @@ do
         await this.beam_collide;
         _printf("Collision BEAM\n");
         escape true;
-    with
-        //await teste1;
-        
     end
 
 end
@@ -133,7 +130,7 @@ do
 
     loop do
         await (1000*t) ms;
-        _printf("trail\n");
+        //_printf("trail\n");
         //await this.go_collide;
         _printf("EnemyCollide\n");
          
@@ -147,7 +144,11 @@ do
         
         //escape true;
     end
-        
+
+    with
+        await this.go_collide;
+        _printf("enemy hit\n");
+        escape true; 
     end
 end
 
@@ -265,17 +266,31 @@ with
 
 
     par/or do
+        var Beam&&?[] tocol;
+        var Enemy&&?[] disap;
         every SDL_DT do
             loop i in 30 do
                 loop b in beams do
                     if _SDL_HasIntersection(&&b:r,&&enemies[i].r) then
                         //emit enemies[i].go_collide;
-                        //emit enemies[j].go_collide;
+                        tocol = []..tocol..[b];
+                        disap = []..disap..[&&enemies[i]];
                         _printf("hit\n");
-                        //_printf(" %d %d treta\n",i,j);
                     end
                 end
             end
+
+            loop i in $tocol do
+                if tocol[i]? then
+                    emit tocol[i]!:beam_collide;
+                end
+            end
+            loop i in $disap do
+                if disap[i]? then
+                    emit disap[i]!:go_collide;
+                end
+            end
+
         end
     with
         every 500 s do
