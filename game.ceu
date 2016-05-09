@@ -132,7 +132,7 @@ do
         await (1000*t) ms;
         //_printf("trail\n");
         //await this.go_collide;
-        _printf("EnemyCollide\n");
+        //_printf("EnemyCollide\n");
          
         spawn Beam  with
                     this.vy = 500;
@@ -148,6 +148,10 @@ do
     with
         await this.go_collide;
         _printf("enemy hit\n");
+        this.x=-1000000; //gambiarra
+        this.y=-1000000; //gambiarra
+        this.r.x = this.x;
+        this.r.y= this.y;
         escape true; 
     end
 end
@@ -265,17 +269,16 @@ with
     end;
 
 
-    par/or do
-        var Beam&&?[] tocol;
-        var Enemy&&?[] disap;
         every SDL_DT do
+            var Beam&&?[] tocol;
+            var Enemy&&?[] disap;
             loop i in 30 do
                 loop b in beams do
                     if _SDL_HasIntersection(&&b:r,&&enemies[i].r) then
                         //emit enemies[i].go_collide;
                         tocol = []..tocol..[b];
                         disap = []..disap..[&&enemies[i]];
-                        _printf("hit\n");
+                        _printf("hit enemy %d\n",i);
                     end
                 end
             end
@@ -290,19 +293,10 @@ with
                     emit disap[i]!:go_collide;
                 end
             end
+            
 
         end
-    with
-        every 500 s do
-            loop z in 30 do
-                var Enemy&& enemy = &&enemies[z];
-                var Enemy&& enemy2 = &&(enemies[z]);
-               //@unsafe var Enemy&& enemy3 = &&(*enemiesx)[z];
-                _printf("%d\t",(*enemy).x);
-                //_printf("%d\t",(*enemies)[z].x);
-            end
-        end
-    end
+   
 
 with
     every SDL_REDRAW do
