@@ -61,9 +61,7 @@ class Beam with
     var u8 green=0x00;
     var u8 blue=0x00;
     var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
-do
-    
-    
+do  
     par do
         loop do
             var int dt = await SDL_DT;
@@ -101,7 +99,7 @@ class Enemy with
     var int         y;
     var int         t;
     event void go_collide;
-
+    pool Beam[]& beams;
 do
     this.r = _SDL_Rect(x,y, this.r.w,this.r.h);
     par do
@@ -134,7 +132,7 @@ do
         //await this.go_collide;
         //_printf("EnemyCollide\n");
          
-        spawn Beam  with
+        spawn Beam in this.beams  with
                     this.vy = 500;
                     this.y = y ;
                     this.x = x ;
@@ -162,14 +160,14 @@ end
 class Player with
     var _SDL_Renderer& ren;
     pool Beam[]& beams;
-do
     var int x = (640/2 - 20/2) * 1000;
     var int y = (480-50) * 1000;
+    var _SDL_Rect r = _SDL_Rect(x,y, 20,50);
+    event void playerHit;
+do
+    var int life = 3; 
     var int vx = 0;
     var int vy = 0;
-
-    var _SDL_Rect r = _SDL_Rect(x,y, 20,50);
-
     par do
         every dt in SDL_DT do
             x = x + vx*dt;
@@ -216,6 +214,20 @@ do
             r.y = y / 1000;
             _SDL_RenderFillRect(&&this.ren, &&r);
         end
+    with
+        loop do
+        await SDL_DT;
+        await this.playerHit;
+        this.life = this.life -1;
+        _printf("life %d\n",this.life);
+        if this.life <= 0 then
+            _printf("GAME OVER\n");
+            _exit(0);
+            escape true;
+        end
+        end
+
+
     end
 end
 
@@ -241,9 +253,9 @@ with
         this.vx  = 10 + _rand()%50;
     end;
 
+
+    pool Beam[] enemyBeams;
     var int i=0;
-    var Enemy[30]&& enemiesx;
-    var Enemy&&[30] enemiesy;
     var Enemy[30] enemies with
         var int w = 50; 
         var int h = 50; 
@@ -258,11 +270,11 @@ with
         this.vx  = 10 + _rand()%50; 
         this.vy = 10 + _rand()%50;
         this.t = i;
+        this.beams = &enemyBeams;
     end;
-   
-   enemiesx= &&enemies;
 
     pool Beam[] beams;
+
     var Player p with
         this.ren = &renderer!;
         this.beams = &beams;
@@ -294,6 +306,22 @@ with
                 end
             end
             
+            var Beam&&?[] beamsHit;
+            loop eb in enemyBeams do
+                    if _SDL_HasIntersection(&&eb:r,&&p.r) then
+                        //emit enemies[i].go_collide;
+                        beamsHit = []..beamsHit..[eb];
+                        _printf("hit player \n");
+                        _printf("HERO HIT\n");
+                    end
+            end
+            
+            loop i in $beamsHit do
+                if beamsHit[i]? then
+                    emit beamsHit[i]!:beam_collide;
+                    emit p.playerHit;
+                end
+            end
 
         end
    
