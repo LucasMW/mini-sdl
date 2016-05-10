@@ -1,0 +1,376 @@
+#include "sdl.ceu"
+#include "sdl-gfx.ceu"
+
+input void SDL_QUIT;
+input void SDL_REDRAW;
+input int SDL_DT;
+input _SDL_MouseButtonEvent&& SDL_MOUSEBUTTONDOWN;
+input _SDL_KeyboardEvent&& SDL_KEYDOWN;
+input _SDL_KeyboardEvent&& SDL_KEYUP;
+
+native do
+    SDL_Renderer* REN = NULL;
+    int REN_W, REN_H;
+    ##define ID(x) x
+end
+native @pure _ID();
+
+var _SDL_Window&? win;
+    finalize
+        win = &_SDL_CreateWindow("Game",
+                _SDL_WINDOWPOS_UNDEFINED, _SDL_WINDOWPOS_UNDEFINED,
+                640, 480, _SDL_WINDOW_SHOWN);
+    with
+        _SDL_DestroyWindow(&&win!);
+    end
+
+_SDL_GetWindowSize(&&win!, &&_REN_W, &&_REN_H);
+
+finalize
+    _REN = _SDL_CreateRenderer(&&win!, -1, 0);
+with
+    _SDL_DestroyRenderer(_REN);
+end
+
+native do
+    SDL_Texture* TEX_UP, *TEX_DOWN, *TEX_SPACESHIP;
+end
+    finalize
+        _TEX_UP = _IMG_LoadTexture(_REN, "monster.png");
+    with
+        _SDL_DestroyTexture(_TEX_UP);
+    end
+    finalize
+        _TEX_DOWN = _IMG_LoadTexture(_REN, "background.jpg");
+    with
+        _SDL_DestroyTexture(_TEX_DOWN);
+    end
+    finalize
+        _TEX_SPACESHIP = _IMG_LoadTexture(_REN, "spaceship1.png");
+    with
+        _SDL_DestroyTexture(_TEX_SPACESHIP);
+    end
+
+#define PI 3.14
+
+class Bird with
+    var _SDL_Renderer& ren;
+    var _SDL_Rect r;
+    var int speed;
+    event void go_collide;
+do
+    this.r.x = 20;
+    this.r.w = 50;
+    this.r.h = 45;
+
+    var bool is_visible = true;
+
+    var float sin = 0;
+    par/or do
+        var bool is_dead =
+            par do
+                var int y = r.y;
+                var float x = r.x;
+                loop do
+                    var int dt = await SDL_DT;
+                    var float v = dt*speed;
+                    x = x + v/1000;
+                    r.x = x;
+                    r.y = y + speed/5*_sin(sin);
+                    sin = sin + PI*v/100000;
+                    if r.x > 580 then
+                        escape false;
+                    end
+                end
+            with
+                await this.go_collide;
+                escape true;
+            end;
+
+        if is_dead then
+            var float y = r.y;
+            loop do
+                var int dt = await SDL_DT;
+                y = y + dt*0.5;
+                r.y = y;
+                if r.y >= 400 then
+                    r.y = 400;
+                    break;
+                end
+            end
+
+            par/or do
+                await 1s;
+            with
+                every 100ms do
+                    is_visible = not is_visible;
+                end
+            end
+        end
+    with
+        every SDL_REDRAW do
+            if is_visible then
+                if ((int)((sin+PI/2)/PI)) % 2 == 0 then
+                    _SDL_RenderCopy(&&ren, _TEX_DOWN, null, &&r);
+                else
+                    _SDL_RenderCopy(&&ren, _TEX_UP, null, &&r);
+                end
+            end
+        end
+    end
+end
+
+class Beam with
+    var _SDL_Renderer& ren;
+    var int vy = -10;
+    var int y = 0;
+    var int x = 0;
+    event void beam_collide;
+    var u8 red=0x00;
+    var u8 green=0x00;
+    var u8 blue=0x00;
+    var _SDL_Rect r = _SDL_Rect(x,y, 5,50);
+do  
+    par do
+        loop do
+            var int dt = await SDL_DT;
+            y = y + vy*dt;
+            if y < 0 then
+                _printf("Should Escape\n");
+                escape true;
+            end
+
+        end
+    with
+        every SDL_REDRAW do
+            //_printf("redraw %d %d\n",x,y);
+           _SDL_SetRenderDrawColor(&&ren, red, green, blue, 0x00);
+            r.y = y / 1000;
+            r.x = x / 1000;
+            _SDL_RenderFillRect(&&ren, &&r);
+        end
+    with
+        await this.beam_collide;
+        _printf("Collision BEAM\n");
+        escape true;
+    end
+end
+
+class Enemy with
+    var _SDL_Renderer& ren;
+    var _SDL_Rect   r;
+    var int         vx;
+    var int         vy;
+    var int         x;
+    var int         y;
+    var int         t;
+    event void go_collide;
+    pool Beam[]& beams;
+    do
+    this.r = _SDL_Rect(x,y, this.r.w,this.r.h);
+    par do
+        every dt in SDL_DT do
+           x = x + vx*dt;
+           y = y + vy*dt;
+            if x > 640000 then
+                x = 0;
+            end
+            if y > 500000 then
+                x = 0;
+                _printf("Game Over\n");
+                _exit(0);
+            end
+
+        end
+    with
+        every SDL_REDRAW do
+           //_SDL_SetRenderDrawColor(&&ren, 0xFF,0xCC,0xFF,0x00);
+            r.x = x / 1000;
+            r.y = y / 1000;
+	    _SDL_RenderCopy(&&ren, _TEX_UP, null, &&r);
+            //_SDL_RenderFillRect(&&ren, &&r);
+        end
+    with
+
+    loop do
+        await (1000*t) ms;
+        //_printf("trail\n");
+        //await this.go_collide;
+        //_printf("EnemyCollide\n");
+         
+        spawn Beam in this.beams  with
+                    this.vy = 500;
+                    this.y = y ;
+                    this.x = x ;
+                    this.ren = &ren;
+                    this.red = 0xCC;
+                end;
+        
+        //escape true;
+    end
+
+    with
+        await go_collide;
+        _printf("enemy hit\n");
+        x=-1000000; //gambiarra
+        y=-1000000; //gambiarra
+        r.x = x;
+        r.y= y;
+        escape true; 
+    end
+end
+
+
+class Player with
+    var _SDL_Renderer& ren;
+    pool Beam[]& beams;
+    var int x = (640/2 - 20/2) * 1000;
+    var int y = (480-50) * 1000;
+    var _SDL_Rect r = _SDL_Rect(x,y, 50,50);
+    event void playerHit;
+do
+    var int life = 3; 
+    var int vx = 0;
+    var int vy = 0;
+    par do
+        every dt in SDL_DT do
+            x = x + vx*dt;
+            y = y + vy*dt;
+        end
+    with
+            par do
+                loop do
+                    var _SDL_KeyboardEvent&& key;
+                    key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_LEFT;
+                    vx = vx - 100;
+                    key = await SDL_KEYUP   until key:keysym.sym==_SDLK_LEFT;
+                    vx = vx + 100;
+                end
+            with
+                loop do
+                    var _SDL_KeyboardEvent&& key;
+                    key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_RIGHT;
+                    vx = 100 + vx;
+                    key = await SDL_KEYUP   until key:keysym.sym==_SDLK_RIGHT;
+                    vx = vx - 100 ;
+                end
+            end
+            with
+                loop do
+                var _SDL_KeyboardEvent&& key;
+                 key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
+                _printf("fire %d %d\n",x,y);
+                spawn Beam in this.beams with
+                    this.vy = -500;
+                    this.y = y -50000;
+                    this.x = x + 7500;
+                    this.ren = &ren;
+                    this.green= 0xBB;
+                end;
+            end
+    
+    with
+        every SDL_REDRAW do
+           // _SDL_SetRenderDrawColor(&&ren, 0xFF,0xFF,0xFF,0xFF);
+            r.x = x / 1000;
+            r.y = y / 1000;
+	    _SDL_RenderCopy(&&ren, _TEX_SPACESHIP, null, &&r);
+           // _SDL_RenderFillRect(&&ren, &&r);
+        end
+    with
+        loop do
+            await SDL_DT;
+            await this.playerHit;
+            life = life-1;
+            _printf("life %d\n", life);
+            if life <= 0 then
+                _printf("GAME OVER\n");
+                _exit(0);
+                escape true;
+            end
+        end
+    end
+end
+
+par/or do
+    every SDL_REDRAW do
+	var _SDL_Rect r = _SDL_Rect(0,0, _REN_W, _REN_H);
+       // _SDL_SetRenderDrawColor(_REN, 0x20,0x20,0x20, 0xFF);
+	_SDL_RenderCopy(_REN, _TEX_DOWN, null, null);
+       // _SDL_RenderFillRect(_REN, null);
+    end
+with
+    pool Beam[] enemyBeams;
+    var int i=0;
+    var Enemy[30] enemies with
+        var int w = 50; 
+        var int h = 50; 
+        var int y = 100+ _rand()%3000;
+        var int x = 10 + i*20000;
+        i = i +1;
+
+        this.x = x;
+        this.y = y;
+        this.ren = &_ID(_REN);
+        this.r   = _SDL_Rect(x,y,w,h);
+        this.vx  = 10 + _rand()%50; 
+        this.vy = 10 + _rand()%50;
+        this.t = i;
+        this.beams = &enemyBeams;
+    end;
+
+    pool Beam[] beams;
+    var Player p with
+        this.ren = &_ID(_REN);
+        this.beams = &beams;
+    end;
+    every SDL_DT do
+        var Beam&&?[] tocol;
+        var Enemy&&?[] disap;
+        loop i in 30 do
+            loop b in beams do
+                if _SDL_HasIntersection(&&b:r,&&enemies[i].r) then
+                    //emit enemies[i].go_collide;
+                    tocol = []..tocol..[b];
+                    disap = []..disap..[&&enemies[i]];
+                    _printf("hit enemy %d\n",i);
+                end
+            end
+        end
+        loop i in $tocol do
+            if tocol[i]? then
+                emit tocol[i]!:beam_collide;
+            end
+        end
+        loop i in $disap do
+            if disap[i]? then
+                emit disap[i]!:go_collide;
+            end
+        end
+            
+        var Beam&&?[] beamsHit;
+        loop eb in enemyBeams do
+            if _SDL_HasIntersection(&&eb:r,&&p.r) then
+                //emit enemies[i].go_collide;
+                beamsHit = []..beamsHit..[eb];
+                _printf("hit player \n");
+                _printf("HERO HIT\n");
+            end
+        end
+            
+        loop i in $beamsHit do
+            if beamsHit[i]? then
+                emit beamsHit[i]!:beam_collide;
+                emit p.playerHit;
+            end
+        end
+    end
+with
+    every SDL_REDRAW do
+        _SDL_RenderPresent(_REN);
+    end
+with
+    await SDL_QUIT;
+end
+
+escape 0;
