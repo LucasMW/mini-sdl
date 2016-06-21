@@ -9,6 +9,8 @@ input _SDL_MouseButtonEvent&& SDL_MOUSEBUTTONDOWN;
 event (_SDL_Rect,int) collideTime;
 event int teste1;
 
+input char SERIAL;
+
 
 var _SDL_Window&? window;
     finalize
@@ -194,9 +196,9 @@ do
             end
             with
                 loop do
-                var _SDL_KeyboardEvent&& key;
-                 key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
-                _printf("fire %d %d\n",x,y);
+                    var _SDL_KeyboardEvent&& key;
+                    key = await SDL_KEYDOWN until key:keysym.sym==_SDLK_UP;
+                    _printf("fire %d %d\n",x,y);
                 spawn Beam in this.beams with
                     this.vy = -500;
                     this.y = y -50000;
@@ -204,7 +206,27 @@ do
                     this.ren = &ren;
                     this.green= 0xBB;
                 end;
-            end
+                end
+            with
+                par do
+                    loop do
+                    var char c = await SERIAL;
+                    _printf("RECEIVED %c\n",c);
+                    end
+                with
+                    async/thread do
+                        loop do
+                            var char c='x';
+                            var int h;
+                            native @nohold _scanf;
+                            h = _scanf("%c",&&c);
+                            if h then
+                                emit SERIAL => c;
+                            end
+                        end
+                    end
+                end
+            
     
     with
         every SDL_REDRAW do
