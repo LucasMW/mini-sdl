@@ -214,7 +214,7 @@ do
                     _printf("RECEIVED %c\n",c);
                     end
                 with
-                    async/thread do
+                    async do
                         loop do
                             var char c='x';
                             var int h;
