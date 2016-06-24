@@ -10,24 +10,32 @@
  *
  * Returns the file descriptor on success or -1 on error.
  */
-
-int
-open_port(void)
+int open_port(void)
 {
   int fd; /* File descriptor for the port */
 
 
-  fd = open("/dev/ttyACM0", O_RDWR | O_NOCTTY | O_NDELAY);
+  fd = open("/dev/cu.usbmodem1411", O_RDWR | O_NOCTTY | O_NDELAY);
   if (fd == -1)
   {
    /*
     * Could not open the port.
     */
 
-    perror("open_port: Unable to open /dev/ttyS0 - ");
+    perror("open_port: Unable to open  - ");
   }
   else
+  {
     fcntl(fd, F_SETFL, 0);
+    printf("WORKED %d \n",fd);
+  }
 
   return (fd);
 }
+
+ int main (void)
+ {
+    open_port();
+ }
+
+

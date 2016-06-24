@@ -214,16 +214,18 @@ do
                     _printf("RECEIVED %c\n",c);
                     end
                 with
-                    async do
-                        loop do
-                            var char c='x';
-                            var int h;
+                    loop do
+                        var char c='x';
+                        var int h=0;
+                    async (h,c) do
                             native @nohold _scanf;
                             h = _scanf("%c",&&c);
-                            if h then
-                                emit SERIAL => c;
-                            end
+                    end
+                    async (h,c) do
+                        if h then
+                            emit SERIAL => c;
                         end
+                    end
                     end
                 end
             
