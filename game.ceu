@@ -215,17 +215,21 @@ do
                     end
                 with
                     loop do
-                        var char c='x';
-                        var int h=0;
-                    async (h,c) do
-                            native @nohold _scanf;
-                            h = _scanf("%c",&&c);
-                    end
-                    async (h,c) do
-                        if h then
-                            emit SERIAL => c;
+                        var char c = 'x';
+                        var int h =0;
+                        var int it = 0;
+                        async (h,c) do
+                            native @nohold _fscanf;
+                            _fscanf(_stdin,"%c",&&c);
+                            //_printf("get char %c",c);
+                            h = c!='x';
+                            //c = _getchar();
+                            //fcntl(fd,F_SETFL,flag | O_NONBLOCK)
+                            //it = _read(_stdin, &&c, 1);
+                            if h then
+                                emit SERIAL => c;
+                            end
                         end
-                    end
                     end
                 end
             
