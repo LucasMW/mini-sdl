@@ -1,7 +1,7 @@
 #define LED_PIN 4
-#define BT_LEFT 7
+#define BT_LEFT 9
 #define BT_RIGHT 8
-#define BT_BEAM 6
+#define BT_BEAM 7
 
 #define MIN_INTERVAL 100
 
@@ -12,7 +12,9 @@ int OLD = millis();
 int BT_LEFT_LASTPRESS = millis();
 int BT_RIGHT_LASTPRESS = millis();
 int BT_UP_LASTPRESS = millis();
-
+int BT_UP_LAST_STATUS = LOW;
+int BT_LEFT_LAST_STATUS = LOW;
+int BT_RIGHT_LAST_STATUS = LOW;
 void setup () {
     pinMode(BT_LEFT, INPUT);
     pinMode(BT_RIGHT, INPUT);
@@ -29,29 +31,47 @@ void loop () {
     if(btup == HIGH){
       int btup_now = millis();
       if(btup_now - MIN_INTERVAL >= BT_UP_LASTPRESS){
+        if(BT_UP_LAST_STATUS == LOW) Serial.println("1");
+        BT_UP_LAST_STATUS = HIGH;
         Serial.println("W");
         BT_UP_LASTPRESS = millis();
-        //Keyboard.press(KEY_UP_ARROW);
       }
     }
+  else{
+      if(BT_UP_LAST_STATUS == HIGH) Serial.println("0");
+      BT_UP_LAST_STATUS = LOW;
+    }
+    
     int btleft = digitalRead(BT_LEFT); // Read button state
     if(btleft == HIGH){
       int btleft_now = millis();
       if(btleft_now - MIN_INTERVAL >= BT_LEFT_LASTPRESS){
+        if(BT_LEFT_LAST_STATUS == LOW) Serial.println("1");
+        BT_LEFT_LAST_STATUS = HIGH;
         Serial.println("A");
         BT_LEFT_LASTPRESS = millis();
         //Keyboard.press(KEY_LEFT_ARROW);
       }
+    }
+    else{
+      if(BT_LEFT_LAST_STATUS == HIGH) Serial.println("0");
+      BT_LEFT_LAST_STATUS = LOW;
     }
     
     int btright = digitalRead(BT_RIGHT); // Read button state
     if(btright == HIGH){
       int btright_now = millis();
       if(btright_now - MIN_INTERVAL >= BT_RIGHT_LASTPRESS){
+        if(BT_RIGHT_LAST_STATUS == LOW) Serial.println("1");
+        BT_RIGHT_LAST_STATUS = HIGH;
         Serial.println("D");
         BT_RIGHT_LASTPRESS = millis();
         //Keyboard.press(KEY_RIGHT_ARROW);
       }
+    }
+    else{
+      if(BT_RIGHT_LAST_STATUS == HIGH) Serial.println("0");
+      BT_RIGHT_LAST_STATUS = LOW;
     }
  }
 }
