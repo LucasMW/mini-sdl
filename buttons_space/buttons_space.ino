@@ -1,7 +1,7 @@
 #define LED_PIN 4
-#define BT_LEFT 7
-#define BT_RIGHT 8
-#define BT_BEAM 6
+#define BT_LEFT 6
+#define BT_RIGHT 7
+#define BT_BEAM 8
 
 #define MIN_INTERVAL 100
 

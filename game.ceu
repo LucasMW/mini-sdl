@@ -214,6 +214,7 @@ do
                 end
             with
                 par do
+                    var int orvx = vx;
                     loop do
                     var char c = await SERIAL;
                     _printf("RECEIVED %c\n",c);
@@ -228,10 +229,15 @@ do
                         end;
                     end
                     if (c == 'D') then
+                         vx = 100 + vx;
                         _printf("Right\n");
                     end
                     if(c == 'A') then
+                         vx = vx - 100;
                         _printf("Left\n");
+                    end
+                    if(c == '0') then
+                        vx = orvx;
                     end
                     end
                 with
