@@ -217,6 +217,22 @@ do
                     loop do
                     var char c = await SERIAL;
                     _printf("RECEIVED %c\n",c);
+                    if(c == 'W') then
+                        _printf("BEAM\n");
+                         spawn Beam in this.beams with
+                            this.vy = -500;
+                            this.y = y -50000;
+                            this.x = x + 7500;
+                            this.ren = &ren;
+                            this.green= 0xBB;
+                        end;
+                    end
+                    if (c == 'D') then
+                        _printf("Right\n");
+                    end
+                    if(c == 'A') then
+                        _printf("Left\n");
+                    end
                     end
                 with
                     loop do
@@ -231,7 +247,6 @@ do
                             var int fd = _open("/dev/cu.usbmodem1421",_O_RDONLY);
                             var int flags = _fcntl(fd,_F_GETFL,0);
                             if(_fcntl(fd,_F_SETFL,flags | _O_NONBLOCK))  then 
-                                _printf("nope");
                             end
                             var int ret = _read(fd,&&c,1);
 
