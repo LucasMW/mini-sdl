@@ -1,5 +1,10 @@
 #include "sdl.ceu"
 
+native do
+    ##include <unistd.h>
+    ##include <fcntl.h>
+end
+
 input void SDL_REDRAW;
 input void SDL_QUIT;
 input int  SDL_DT;
@@ -219,14 +224,18 @@ do
                         var int h =0;
                         var int it = 0;
                         async (h,c) do
+
                             native @nohold _fscanf;
-                            _fscanf(_stdin,"%c",&&c);
-                            //_printf("get char %c",c);
-                            h = c!='x';
-                            //c = _getchar();
-                            //fcntl(fd,F_SETFL,flag | O_NONBLOCK)
-                            //it = _read(_stdin, &&c, 1);
-                            if h then
+                            native @nohold _fcntl;
+                            native @nohold _read;
+                            var int fd = _open("/dev/cu.usbmodem1421",_O_RDONLY);
+                            var int flags = _fcntl(fd,_F_GETFL,0);
+                            if(_fcntl(fd,_F_SETFL,flags | _O_NONBLOCK))  then 
+                                _printf("nope");
+                            end
+                            var int ret = _read(fd,&&c,1);
+
+                            if ret >= 0 then
                                 emit SERIAL => c;
                             end
                         end
