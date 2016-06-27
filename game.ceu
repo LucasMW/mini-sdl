@@ -179,7 +179,14 @@ do
         every dt in SDL_DT do
             x = x + vx*dt;
             y = y + vy*dt;
+            if this.x > 640000 then
+                this.x = 0;
+            end
+            if this.x < 0 then
+                this.x = 640000;
+            end
         end
+        
     with
         
             par do
@@ -215,9 +222,13 @@ do
             with
                 par do
                     var int orvx = vx;
+                    var int rightvx = vx + 100;
+                    var int leftvx = vx - 100;
+                    var char lastserial = 0;
                     loop do
                     var char c = await SERIAL;
                     _printf("RECEIVED %c\n",c);
+                    if(c != lastserial) then
                     if(c == 'W') then
                         _printf("BEAM\n");
                          spawn Beam in this.beams with
@@ -229,17 +240,20 @@ do
                         end;
                     end
                     if (c == 'D') then
-                         vx = 100 + vx;
+                         vx = rightvx;
                         _printf("Right\n");
                     end
                     if(c == 'A') then
-                         vx = vx - 100;
+                         vx = leftvx;
                         _printf("Left\n");
                     end
                     if(c == '0') then
                         vx = orvx;
                     end
+                    lastserial = c;
                     end
+                    end
+
                 with
                     loop do
                         var char c = 'x';
@@ -326,7 +340,7 @@ with
         this.ren = &renderer!;
         this.r   = _SDL_Rect(x,y,w,h);
         this.vx  = 10 + _rand()%50; 
-        this.vy = 10 + _rand()%50;
+        this.vy = 10 + _rand()%5;
         this.t = i;
         this.beams = &enemyBeams;
     end;
