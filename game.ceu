@@ -134,7 +134,7 @@ do
     with
 
     loop do
-        await (1000*t) ms;
+        await (1000*t) s;
         //_printf("trail\n");
         //await this.go_collide;
         //_printf("EnemyCollide\n");
@@ -224,7 +224,7 @@ do
                 var char lastserial = 0;
                 loop do
                     var char c = await SERIAL;
-                    _printf("RECEIVED %c\n",c);
+                    _printf("%c\n",c);
                     if(c != lastserial) then
                         if(c == 'W') then
                             _printf("BEAM\n");
@@ -238,11 +238,11 @@ do
                         end
                         if (c == 'D') then
                             vx = rightvx;
-                            _printf("Right\n");
+                           // _printf("Right\n");
                         end
                         if(c == 'A') then
                             vx = leftvx;
-                            _printf("Left\n");
+                           // _printf("Left\n");
                         end
                         if(c == '0') then
                             vx = orvx;
@@ -250,6 +250,7 @@ do
                         lastserial = c;
                     end
                 end
+                _printf("FINISHED reacting\n");
             with
                 loop do
                     var char c = 'x';
@@ -262,14 +263,16 @@ do
                         var int fd = _open("/dev/cu.usbmodem1421",_O_RDONLY);
                         var int flags = _fcntl(fd,_F_GETFL,0);
                         if(_fcntl(fd,_F_SETFL,flags | _O_NONBLOCK))  then 
-                        end
-                        var int ret = _read(fd,&&c,1);
-
-                        if ret >= 0 then
-                            emit SERIAL => c;
+                            _printf("ERROR 1\n");
+                        else
+                            var int ret = _read(fd,&&c,1);
+                            if ret >= 0 then
+                                emit SERIAL => c;
+                            end
                         end
                     end
                 end
+                _printf("FINISHED reading\n");
             end
         end
     with
