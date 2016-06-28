@@ -252,7 +252,7 @@ do
                 end
                 _printf("FINISHED reacting\n");
             with
-                loop do
+        
                     var char c = 'x';
                     var int h =0;
                     var int it = 0;
@@ -263,15 +263,18 @@ do
                         var int fd = _open("/dev/cu.usbmodem1421",_O_RDONLY);
                         var int flags = _fcntl(fd,_F_GETFL,0);
                         if(_fcntl(fd,_F_SETFL,flags | _O_NONBLOCK))  then 
-                            _printf("ERROR 1\n");
+                            _printf("ERROR NO CONTROLLER\n");
                         else
-                            var int ret = _read(fd,&&c,1);
-                            if ret >= 0 then
-                                emit SERIAL => c;
+                            _printf("Joystick ON\n");
+                            loop do
+                                var int ret = _read(fd,&&c,1);
+                                if ret >= 0 then
+                                    emit SERIAL => c;
+                                end
                             end
                         end
                     end
-                end
+               
                 _printf("FINISHED reading\n");
             end
         end
